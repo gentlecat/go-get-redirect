@@ -14,7 +14,7 @@ import (
 	"unicode/utf8"
 
 	git "github.com/go-git/go-git/v5"
-	"github.com/google/go-github/v33/github"
+	github "github.com/google/go-github/v33/github"
 )
 
 var (
@@ -35,7 +35,7 @@ func main() {
 		log.Fatal("Domain name must be specified in DOMAIN_NAME env variable")
 	}
 	if githubUsername == "" {
-		log.Fatal("GitHub username must be specified in GITHUB_USERNAME env variable")
+		log.Fatal("GitHub username must be specified in GITHUB_ACTOR env variable")
 	}
 	fmt.Printf("Got configuration [domainName=%s, githubUsername=%s]\n", domainName, githubUsername)
 
@@ -46,13 +46,11 @@ func main() {
 	}
 
 	for _, p := range getRepositories(githubUsername) {
-		if p.Language != nil && *p.Language == "Go" {
-			fmt.Printf("> Found Go repository \"%s\". Generating paths...\n", *p.Name)
+		if p.Language != nil && *p.Language == "Go" && p.Private != nil && !*p.Private {
+			fmt.Printf("> Found public Go repository \"%s\". Generating paths...\n", *p.Name)
 			for _, repoPath := range getRepositoryPaths(p) {
 				generateFile(domainName, *p.Name, repoPath)
 			}
-		} else {
-			fmt.Printf("> Primary language of repository \"%s\" is not Go. Ignoring.\n", *p.Name)
 		}
 	}
 }
