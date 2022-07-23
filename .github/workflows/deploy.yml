@@ -14,7 +14,7 @@ jobs:
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
       with:
-        go-version: ^1.13
+        go-version: ^1.18
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
@@ -33,9 +33,9 @@ jobs:
       run: make run
 
     - name: Deploy 🚀
-      uses: JamesIves/github-pages-deploy-action@3.7.1
+      uses: JamesIves/github-pages-deploy-action@v4.4.0
       with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        BRANCH: gh-pages
-        FOLDER: out
-        CLEAN: true
+        branch: gh-pages
+        folder: out
+        clean: true
+        single-commit: true
