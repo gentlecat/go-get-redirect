@@ -1,4 +1,4 @@
-# go-get-redirect
+# go-get-redirect ![Test run](https://github.com/gentlecat/publisher/workflows/Test%20run/badge.svg)
 
 This tool allows you to vend your [Go](https://go.dev/) packages via a custom domain name. It generates a static website for redirection purposes by scanning a given GitHub account for public Go repos. Current implementation is based around GitHub account and generating a static website using [Actions](https://github.com/features/actions).
 
