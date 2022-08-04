@@ -18,44 +18,71 @@ import (
 )
 
 var (
-	outputDir = flag.String("out", "./out", "Output directory")
+	outputDir      = flag.String("out", "./out", "Output directory")
+	domainName     = flag.String("domain", "", "Domain name; overrides DOMAIN_NAME env variable")
+	githubUsername = flag.String("gh-user", "", "GitHub username; overrides GITHUB_ACTOR env variable")
 
-	fileTemplate = template.Must(template.ParseFiles("template.html"))
+	indexTemplate    = template.Must(template.ParseFiles("templates/index.html"))
+	redirectTemplate = template.Must(template.ParseFiles("templates/redirect.html"))
 )
 
 func main() {
-	flag.Parse()
-
 	start := time.Now()
 	defer fmt.Printf("Done in %v!\n", time.Since(start))
 
-	domainName := os.Getenv("DOMAIN_NAME")
-	githubUsername := os.Getenv("GITHUB_ACTOR")
-	if domainName == "" {
-		log.Fatal("Domain name must be specified in DOMAIN_NAME env variable")
+	flag.Parse()
+	if len(*domainName) == 0 {
+		*domainName = os.Getenv("DOMAIN_NAME")
+		if len(*domainName) == 0 {
+			log.Fatal("Domain name must be specified in DOMAIN_NAME env variable")
+		}
 	}
-	if githubUsername == "" {
-		log.Fatal("GitHub username must be specified in GITHUB_ACTOR env variable")
+	if len(*githubUsername) == 0 {
+		*githubUsername = os.Getenv("GITHUB_ACTOR")
+		if len(*githubUsername) == 0 {
+			log.Fatal("GitHub username must be specified in GITHUB_ACTOR env variable")
+		}
 	}
-	fmt.Printf("Got configuration [domainName=%s, githubUsername=%s]\n", domainName, githubUsername)
+	fmt.Printf("Got configuration [domainName=%s, githubUsername=%s]\n", *domainName, *githubUsername)
 
 	fmt.Printf("Generating the files (at %s)...\n", *outputDir)
-
 	if err := os.MkdirAll(*outputDir, 0777); err != nil {
 		log.Fatal(err)
 	}
 
-	for _, p := range getRepositories(githubUsername) {
+	generateIndexFile(*githubUsername)
+
+	for _, p := range getRepositories(*githubUsername) {
 		if p.Language != nil && *p.Language == "Go" && p.Private != nil && !*p.Private {
 			fmt.Printf("> Found public Go repository \"%s\". Generating paths...\n", *p.Name)
 			for _, repoPath := range getRepositoryPaths(p) {
-				generateFile(domainName, *p.Name, repoPath)
+				generateRedirectFile(*domainName, *p.Name, *githubUsername, repoPath)
 			}
 		}
 	}
 }
 
-func generateFile(domainName, packageName, outputPath string) {
+func generateIndexFile(githubUsername string) {
+	filePath := path.Join(*outputDir, "index.html")
+	fmt.Printf("  + %s", "index.html\n")
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	err = indexTemplate.Execute(file, struct {
+		GitHubUsername string
+	}{
+		githubUsername,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func generateRedirectFile(domainName, packageName, githubUsername, outputPath string) {
 	filePath := path.Join(*outputDir, outputPath+".html")
 	fmt.Printf("  + %s", outputPath+".html\n")
 	if err := os.MkdirAll(path.Dir(filePath), 0777); err != nil {
@@ -68,11 +95,12 @@ func generateFile(domainName, packageName, outputPath string) {
 	}
 	defer file.Close()
 
-	err = fileTemplate.Execute(file, struct {
-		Domain, Package string
+	err = redirectTemplate.Execute(file, struct {
+		Domain, Package, GitHubUsername string
 	}{
 		domainName,
 		packageName,
+		githubUsername,
 	})
 	if err != nil {
 		log.Fatal(err)
