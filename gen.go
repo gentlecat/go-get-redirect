@@ -54,10 +54,12 @@ func main() {
 
 	for _, p := range getRepositories(*githubUsername) {
 		if p.Language != nil && *p.Language == "Go" && p.Private != nil && !*p.Private {
-			fmt.Printf("> Found public Go repository \"%s\". Generating paths...\n", *p.Name)
+			fmt.Printf("> Found a Go repository \"%s\". Generating paths...\n", *p.Name)
 			for _, repoPath := range getRepositoryPaths(p) {
 				generateRedirectFile(*domainName, *p.Name, *githubUsername, repoPath)
 			}
+		} else {
+			fmt.Printf("> Skipping \"%s\".\n", *p.Name)
 		}
 	}
 }
@@ -109,12 +111,27 @@ func generateRedirectFile(domainName, packageName, githubUsername, outputPath st
 
 func getRepositories(username string) []*github.Repository {
 	fmt.Printf("Getting the list of repositories for user %s from GitHub... ", username)
-	repos, _, err := github.NewClient(nil).Repositories.List(context.Background(), username, nil)
-	if err != nil {
-		log.Fatal(err)
+
+	client := github.NewClient(nil)
+	opt := &github.RepositoryListOptions{
+		ListOptions: github.ListOptions{PerPage: 10},
 	}
-	fmt.Printf("Found %v repositories.\n", len(repos))
-	return repos
+
+	var allRepos []*github.Repository
+	for {
+		repos, resp, err := client.Repositories.List(context.Background(), username, opt)
+		if err != nil {
+			log.Fatal(err)
+		}
+		allRepos = append(allRepos, repos...)
+		if resp.NextPage == 0 {
+			break
+		}
+		opt.Page = resp.NextPage
+	}
+
+	fmt.Printf("Found %v repositories.\n", len(allRepos))
+	return allRepos
 }
 
 func getRepositoryPaths(repo *github.Repository) []string {
@@ -131,7 +148,7 @@ func getRepositoryPaths(repo *github.Repository) []string {
 	return listDirs(tmpRepoPath, tmpDir)
 }
 
-// listDirs returns a list of paths with all sub-directories within a given directory.
+// listDirs returns a list of paths with all subdirectories within a given directory.
 func listDirs(curPath, tmpDir string) []string {
 	var dirs []string
 
