@@ -53,8 +53,8 @@ func main() {
 	generateIndexFile(*githubUsername)
 
 	for _, p := range getRepositories(*githubUsername) {
-		if p.Language != nil && *p.Language == "Go" && p.Private != nil && !*p.Private {
-			fmt.Printf("> Found a Go repository \"%s\". Generating paths...\n", *p.Name)
+		if p.Language != nil && p.Private != nil && !*p.Private {
+			fmt.Printf("> Found a repository \"%s\". Generating paths...\n", *p.Name)
 			for _, repoPath := range getRepositoryPaths(p) {
 				generateRedirectFile(*domainName, *p.Name, *githubUsername, repoPath)
 			}
