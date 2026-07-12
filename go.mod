@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/go-git/go-git/v5 v5.19.1
-	github.com/google/go-github/v33 v33.0.0
+	github.com/google/go-github/v89 v89.0.0
 	github.com/google/go-github/v89 v89.0.0
 )
 
