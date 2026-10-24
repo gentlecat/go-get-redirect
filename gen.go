@@ -14,7 +14,7 @@ import (
 	"unicode/utf8"
 
 	git "github.com/go-git/go-git/v5"
-	github "github.com/google/go-github/v33/github"
+	github "github.com/google/go-github/v93/github"
 )
 
 var (
@@ -112,7 +112,10 @@ func generateRedirectFile(domainName, packageName, githubUsername, outputPath st
 func getRepositories(username string) []*github.Repository {
 	fmt.Printf("Getting the list of repositories for user %s from GitHub... ", username)
 
-	client := github.NewClient(nil)
+	client, err := github.NewClient()
+	if err != nil {
+		log.Fatal(err)
+	}
 	opt := &github.RepositoryListOptions{
 		ListOptions: github.ListOptions{PerPage: 10},
 	}
