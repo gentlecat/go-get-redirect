@@ -28,7 +28,7 @@ var (
 
 func main() {
 	start := time.Now()
-	defer fmt.Printf("Done in %v!\n", time.Since(start))
+	defer func() { fmt.Printf("Done in %v!\n", time.Since(start)) }()
 
 	flag.Parse()
 	if len(*domainName) == 0 {
